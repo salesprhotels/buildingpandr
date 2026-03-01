@@ -1,6 +1,6 @@
 /* ================= CONFIG ================= */
 
-const API_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";  
+const API_URL = "https://script.google.com/macros/s/AKfycbwo78mV92MKxcGMSB52NziL7bmn0AsEplVo2rhj92O3UGk7EKl9B8OlJt9ZqbmXEE7JiQ/exec";  
 const MASTER_PASSWORD = "PandR@123";
 
 let currentData = {
