@@ -160,76 +160,31 @@
 
 <!-- ================= REPORT ================= -->
 <div id="report" class="page">
-<h2>Date Wise Report</h2>
+<h2>Report</h2>
 
 <div class="form-grid">
+<select id="reportType">
+<option value="">Select Report Type</option>
+<option value="material">Material</option>
+<option value="vendor">Vendor</option>
+<option value="settlement">Settlement</option>
+</select>
+
 <input type="date" id="reportFrom">
 <input type="date" id="reportTo">
-<button onclick="loadReport()">Filter</button>
-<button onclick="window.print()">Export PDF</button>
+
+<button onclick="generateReport()">Submit</button>
 </div>
 
-<h3>Vendor Report</h3>
-<table id="reportVendor">
-<thead>
-<tr>
-<th>Date</th>
-<th>Vendor</th>
-<th>Amount</th>
-<th>Paid By</th>
-</tr>
-</thead>
+<h3 id="reportTitle"></h3>
+
+<table id="reportTable">
+<thead></thead>
 <tbody></tbody>
-<tfoot>
-<tr>
-<td colspan="2">Grand Total</td>
-<td id="reportVendorTotal">0</td>
-<td></td>
-</tr>
-</tfoot>
+<tfoot></tfoot>
 </table>
 
-<h3>Material Report</h3>
-<table id="reportMaterial">
-<thead>
-<tr>
-<th>Date</th>
-<th>Item</th>
-<th>Total</th>
-<th>Paid By</th>
-</tr>
-</thead>
-<tbody></tbody>
-<tfoot>
-<tr>
-<td colspan="2">Grand Total</td>
-<td id="reportMaterialTotal">0</td>
-<td></td>
-</tr>
-</tfoot>
-</table>
-
-<h3>Settlement Report</h3>
-<table id="reportSettlement">
-<thead>
-<tr>
-<th>Date</th>
-<th>Paid To</th>
-<th>Amount</th>
-<th>Paid By</th>
-</tr>
-</thead>
-<tbody></tbody>
-<tfoot>
-<tr>
-<td colspan="2">Grand Total</td>
-<td id="reportSettlementTotal">0</td>
-<td></td>
-</tr>
-</tfoot>
-</table>
-
-</div> 
+</div>
     
 <div id="ledger" class="page">
 <h2>Ledger</h2>
