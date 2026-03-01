@@ -147,3 +147,74 @@ async function cancel(sheet,id){
 await api("cancelEntry",{sheet,id});
 loadAll();
 }
+// ================= REPORT =================
+async function loadReport(){
+
+const from = new Date(reportFrom.value);
+const to = new Date(reportTo.value);
+
+const data = await api("getReport");
+
+let vHTML="", mHTML="", sHTML="";
+let vTotal=0, mTotal=0, sTotal=0;
+
+// VENDOR
+data.vendor.forEach(r=>{
+const d = new Date(r.Date);
+if(reportFrom.value && d < from) return;
+if(reportTo.value && d > to) return;
+
+vTotal += Number(r.Amount);
+vHTML += `
+<tr>
+<td>${d.toLocaleDateString()}</td>
+<td>${r.Vendor}</td>
+<td>${r.Amount}</td>
+<td>${r.Paid_By}</td>
+</tr>`;
+});
+
+reportVendor.querySelector("tbody").innerHTML = vHTML;
+reportVendorTotal.innerText = vTotal;
+
+
+// MATERIAL
+data.material.forEach(r=>{
+const d = new Date(r.Date);
+if(reportFrom.value && d < from) return;
+if(reportTo.value && d > to) return;
+
+mTotal += Number(r.Total);
+mHTML += `
+<tr>
+<td>${d.toLocaleDateString()}</td>
+<td>${r.Item}</td>
+<td>${r.Total}</td>
+<td>${r.Paid_By}</td>
+</tr>`;
+});
+
+reportMaterial.querySelector("tbody").innerHTML = mHTML;
+reportMaterialTotal.innerText = mTotal;
+
+
+// SETTLEMENT
+data.settlement.forEach(r=>{
+const d = new Date(r.Date);
+if(reportFrom.value && d < from) return;
+if(reportTo.value && d > to) return;
+
+sTotal += Number(r.Amount);
+sHTML += `
+<tr>
+<td>${d.toLocaleDateString()}</td>
+<td>${r.Paid_To}</td>
+<td>${r.Amount}</td>
+<td>${r.Paid_By}</td>
+</tr>`;
+});
+
+reportSettlement.querySelector("tbody").innerHTML = sHTML;
+reportSettlementTotal.innerText = sTotal;
+
+}
