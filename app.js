@@ -1,55 +1,53 @@
-/* ================= CONFIG ================= */
-
-const API_URL = "https://script.google.com/macros/s/AKfycbwo78mV92MKxcGMSB52NziL7bmn0AsEplVo2rhj92O3UGk7EKl9B8OlJt9ZqbmXEE7JiQ/exec";  
+// ================= CONFIG =================
+const API_URL = "https://script.google.com/macros/s/AKfycbwo78mV92MKxcGMSB52NziL7bmn0AsEplVo2rhj92O3UGk7EKl9B8OlJt9ZqbmXEE7JiQ/exec";
 const MASTER_PASSWORD = "PandR@123";
 
-let currentData = {
-    material: [],
-    vendor: [],
-    settlement: []
-};
-
-/* ================= LOGIN ================= */
-
-function login(){
+// ================= LOGIN =================
+function login() {
     const pass = document.getElementById("password").value;
-    if(pass === MASTER_PASSWORD){
-        localStorage.setItem("erpLogin", "true");
+    if (pass === MASTER_PASSWORD) {
+        sessionStorage.setItem("loggedIn", "true");
         document.getElementById("loginPage").style.display = "none";
-        document.getElementById("app").classList.remove("hidden");
-        loadAllData();
-    }else{
-        document.getElementById("loginError").innerText = "Wrong Password";
+        document.getElementById("app").style.display = "flex";
+        loadDashboard();
+        loadVendor();
+        loadMaterial();
+        loadSettlement();
+        loadLedger();
+    } else {
+        alert("Wrong Password");
     }
 }
 
-function logout(){
-    localStorage.removeItem("erpLogin");
+function logout() {
+    sessionStorage.clear();
     location.reload();
 }
 
-window.onload = function(){
-    if(localStorage.getItem("erpLogin")==="true"){
+window.onload = function () {
+    if (sessionStorage.getItem("loggedIn") === "true") {
         document.getElementById("loginPage").style.display = "none";
-        document.getElementById("app").classList.remove("hidden");
-        loadAllData();
+        document.getElementById("app").style.display = "flex";
+        loadDashboard();
+        loadVendor();
+        loadMaterial();
+        loadSettlement();
+        loadLedger();
     }
 };
 
-/* ================= SECTION NAV ================= */
-
-function showSection(id){
-    document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
+// ================= PAGE NAVIGATION =================
+function showPage(id) {
+    document.querySelectorAll(".page").forEach(p => p.style.display = "none");
+    document.getElementById(id).style.display = "block";
 }
 
-/* ================= API CALL ================= */
-
-async function apiCall(action, data={}){
-    const res = await fetch(API_URL,{
-        method:"POST",
+// ================= API CALL =================
+async function callAPI(action, data = {}) {
+    const res = await fetch(API_URL, {
+        method: "POST",
         body: JSON.stringify({
-            action,
+            action: action,
             password: MASTER_PASSWORD,
             ...data
         })
@@ -57,236 +55,181 @@ async function apiCall(action, data={}){
     return await res.json();
 }
 
-/* ================= LOAD DATA ================= */
-
-async function loadAllData(){
-    const report = await apiCall("getReport");
-    currentData = report;
-
-    renderMaterial();
-    renderVendor();
-    renderSettlement();
-    renderDashboard();
-    renderLedger();
+// ================= DASHBOARD =================
+async function loadDashboard() {
+    const data = await callAPI("getDashboard");
+    document.getElementById("totalExpense").innerText = data.totalExpense || 0;
+    document.getElementById("totalSettlement").innerText = data.totalSettled || 0;
+    document.getElementById("papaExpense").innerText = data.papaExpense || 0;
 }
 
-/* ================= SUCCESS POPUP ================= */
+// ================= MATERIAL =================
+document.getElementById("matRate")?.addEventListener("input", calcMaterialTotal);
+document.getElementById("matQty")?.addEventListener("input", calcMaterialTotal);
 
-function showSuccess(msg){
-    alert(msg);
+function calcMaterialTotal() {
+    const qty = parseFloat(document.getElementById("matQty").value) || 0;
+    const rate = parseFloat(document.getElementById("matRate").value) || 0;
+    document.getElementById("matTotal").value = qty * rate;
 }
 
-/* ================= MATERIAL ================= */
-
-function addMaterial(){
-    const qty = Number(matQty.value);
-    const rate = Number(matRate.value);
-    const total = qty * rate;
-    matTotal.value = total;
-
-    apiCall("addMaterial",{
+async function addMaterial() {
+    await callAPI("addMaterial", {
         date: matDate.value,
         category: matCategory.value,
         item: matItem.value,
-        qty,
+        qty: matQty.value,
         unit: matUnit.value,
-        rate,
+        rate: matRate.value,
         vendor: matVendor.value,
         paidBy: matPaidBy.value,
         mode: matMode.value,
         remarks: matRemarks.value
-    }).then(()=>{
-        showSuccess("Material Added Successfully");
-        document.querySelectorAll("#material input").forEach(i=>i.value="");
-        loadAllData();
     });
+
+    alert("Material Added Successfully");
+    clearMaterialForm();
+    loadMaterial();
+    loadDashboard();
 }
 
-function renderMaterial(){
-    const tbody = document.querySelector("#materialTable tbody");
-    tbody.innerHTML = "";
-    currentData.material.forEach(m=>{
-        tbody.innerHTML += `
-        <tr>
-            <td>${formatDate(m.date)}</td>
-            <td>${m.item}</td>
-            <td>${m.qty}</td>
-            <td>${m.total}</td>
-            <td>${m.paidBy}</td>
-            <td><button onclick="editMaterial('${m.id}')">Edit</button></td>
-            <td><button onclick="cancelMaterial('${m.id}')">Cancel</button></td>
-        </tr>`;
-    });
+function clearMaterialForm() {
+    document.querySelectorAll("#material input, #material select").forEach(i => i.value = "");
 }
 
-/* ================= VENDOR ================= */
+async function loadMaterial() {
+    const data = await callAPI("getReport");
+    let html = "";
+    let total = 0;
 
-function addVendor(){
-    apiCall("addVendor",{
+    data.material.reverse().forEach(r => {
+        total += r.total;
+        html += `
+            <tr>
+                <td>${formatDate(r.date)}</td>
+                <td>${r.item}</td>
+                <td>${r.qty}</td>
+                <td>${r.total}</td>
+                <td>${r.paidBy}</td>
+                <td><button onclick="editMaterial('${r.id}')">Edit</button></td>
+                <td><button onclick="cancelMaterial('${r.id}')">Cancel</button></td>
+            </tr>
+        `;
+    });
+
+    document.querySelector("#materialTable tbody").innerHTML = html;
+    document.getElementById("materialGrandTotal").innerText = total;
+}
+
+// ================= VENDOR =================
+async function addVendor() {
+    await callAPI("addVendor", {
         date: venDate.value,
         vendor: venVendor.value,
         category: venCategory.value,
         paidBy: venPaidBy.value,
-        amount: Number(venAmount.value),
+        amount: venAmount.value,
         mode: venMode.value,
         remarks: venRemarks.value
-    }).then(()=>{
-        showSuccess("Vendor Payment Added");
-        document.querySelectorAll("#vendor input").forEach(i=>i.value="");
-        loadAllData();
     });
+
+    alert("Vendor Payment Added");
+    document.querySelectorAll("#vendor input").forEach(i => i.value = "");
+    loadVendor();
+    loadDashboard();
 }
 
-function renderVendor(){
-    const tbody = document.querySelector("#vendorTable tbody");
-    tbody.innerHTML = "";
-    currentData.vendor.forEach(v=>{
-        tbody.innerHTML += `
-        <tr>
-            <td>${formatDate(v.date)}</td>
-            <td>${v.vendor}</td>
-            <td>${v.amount}</td>
-            <td>${v.paidBy}</td>
-            <td><button onclick="editVendor('${v.id}')">Edit</button></td>
-            <td><button onclick="cancelVendor('${v.id}')">Cancel</button></td>
-        </tr>`;
+async function loadVendor() {
+    const data = await callAPI("getReport");
+    let html = "";
+    let total = 0;
+
+    data.vendor.reverse().forEach(r => {
+        total += r.amount;
+        html += `
+            <tr>
+                <td>${formatDate(r.date)}</td>
+                <td>${r.vendor}</td>
+                <td>${r.amount}</td>
+                <td>${r.paidBy}</td>
+                <td><button onclick="editVendor('${r.id}')">Edit</button></td>
+                <td><button onclick="cancelVendor('${r.id}')">Cancel</button></td>
+            </tr>
+        `;
     });
+
+    document.querySelector("#vendorTable tbody").innerHTML = html;
+    document.getElementById("vendorGrandTotal").innerText = total;
 }
 
-/* ================= SETTLEMENT ================= */
-
-function addSettlement(){
-    apiCall("addSettlement",{
+// ================= SETTLEMENT =================
+async function addSettlement() {
+    await callAPI("addSettlement", {
         date: setDate.value,
         paidTo: setPaidTo.value,
         paidBy: setPaidBy.value,
-        amount: Number(setAmount.value),
+        amount: setAmount.value,
         mode: setMode.value,
         remarks: setRemarks.value
-    }).then(()=>{
-        showSuccess("Settlement Added");
-        document.querySelectorAll("#settlement input").forEach(i=>i.value="");
-        loadAllData();
     });
+
+    alert("Settlement Added");
+    document.querySelectorAll("#settlement input").forEach(i => i.value = "");
+    loadSettlement();
+    loadDashboard();
 }
 
-function renderSettlement(){
-    const tbody = document.querySelector("#settlementTable tbody");
-    tbody.innerHTML="";
-    currentData.settlement.forEach(s=>{
-        tbody.innerHTML += `
-        <tr>
-            <td>${formatDate(s.date)}</td>
-            <td>${s.paidTo}</td>
-            <td>${s.amount}</td>
-            <td>${s.paidBy}</td>
-        </tr>`;
-    });
-}
+async function loadSettlement() {
+    const data = await callAPI("getReport");
+    let html = "";
+    let total = 0;
 
-/* ================= DASHBOARD ================= */
-
-function renderDashboard(){
-    let totalExpense = 0;
-    let totalSettlement = 0;
-    let ledger = {};
-
-    currentData.material.forEach(m=>{
-        totalExpense += m.total;
-        ledger[m.paidBy] = (ledger[m.paidBy]||0) + m.total;
-    });
-
-    currentData.vendor.forEach(v=>{
-        totalExpense += v.amount;
-        ledger[v.paidBy] = (ledger[v.paidBy]||0) + v.amount;
-    });
-
-    currentData.settlement.forEach(s=>{
-        totalSettlement += s.amount;
-        ledger[s.paidTo] = (ledger[s.paidTo]||0) - s.amount;
-        ledger[s.paidBy] = (ledger[s.paidBy]||0) + s.amount;
-    });
-
-    totalExpenseEl.innerText = totalExpense;
-    totalSettlementEl.innerText = totalSettlement;
-    papaExpenseEl.innerText = ledger["Papa"] || 0;
-}
-
-/* ================= LEDGER ================= */
-
-function renderLedger(){
-    const tbody = document.querySelector("#ledgerTable tbody");
-    tbody.innerHTML="";
-    let ledger={};
-
-    currentData.material.forEach(m=>{
-        ledger[m.paidBy]=(ledger[m.paidBy]||0)+m.total;
-    });
-
-    currentData.vendor.forEach(v=>{
-        ledger[v.paidBy]=(ledger[v.paidBy]||0)+v.amount;
-    });
-
-    currentData.settlement.forEach(s=>{
-        ledger[s.paidTo]=(ledger[s.paidTo]||0)-s.amount;
-        ledger[s.paidBy]=(ledger[s.paidBy]||0)+s.amount;
-    });
-
-    for(let p in ledger){
-        tbody.innerHTML += `
-        <tr>
-            <td>${p}</td>
-            <td>${ledger[p]}</td>
-        </tr>`;
-    }
-}
-
-/* ================= REPORT ================= */
-
-function filterReport(){
-    const from = new Date(fromDate.value);
-    const to = new Date(toDate.value);
-    const tbody = document.querySelector("#reportTable tbody");
-    tbody.innerHTML="";
-
-    const all = [
-        ...currentData.material.map(m=>({...m,type:"Material",amount:m.total,name:m.item})),
-        ...currentData.vendor.map(v=>({...v,type:"Vendor",amount:v.amount,name:v.vendor})),
-        ...currentData.settlement.map(s=>({...s,type:"Settlement",amount:s.amount,name:s.paidTo}))
-    ];
-
-    all.forEach(r=>{
-        const d = new Date(r.date);
-        if(d>=from && d<=to){
-            tbody.innerHTML += `
+    data.settlement.reverse().forEach(r => {
+        total += r.amount;
+        html += `
             <tr>
                 <td>${formatDate(r.date)}</td>
-                <td>${r.type}</td>
-                <td>${r.name}</td>
+                <td>${r.paidTo}</td>
                 <td>${r.amount}</td>
                 <td>${r.paidBy}</td>
-            </tr>`;
-        }
+                <td><button>Edit</button></td>
+                <td><button>Cancel</button></td>
+            </tr>
+        `;
     });
+
+    document.querySelector("#settlementTable tbody").innerHTML = html;
+    document.getElementById("settlementGrandTotal").innerText = total;
 }
 
-/* ================= EXPORT ================= */
-
-function exportExcel(){
-    const table = document.getElementById("reportTable");
-    const wb = XLSX.utils.table_to_book(table);
-    XLSX.writeFile(wb,"Report.xlsx");
+// ================= LEDGER =================
+async function loadLedger() {
+    const data = await callAPI("getLedger");
+    let html = "";
+    for (let person in data) {
+        html += `<tr><td>${person}</td><td>${data[person]}</td></tr>`;
+    }
+    document.querySelector("#ledgerTable tbody").innerHTML = html;
 }
 
-function exportPDF(){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.text("PandR ERP Report",10,10);
-    doc.save("Report.pdf");
+// ================= REPORT =================
+async function loadReport() {
+    const data = await callAPI("getReport");
+    document.getElementById("reportContent").innerHTML =
+        "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
 }
 
-/* ================= HELPERS ================= */
+// ================= EXPORT =================
+function exportExcel() {
+    alert("Excel Export Triggered (Connect Sheet Directly)");
+}
 
-function formatDate(d){
-    return new Date(d).toLocaleDateString();
+function exportPDF() {
+    window.print();
+}
+
+// ================= HELPERS =================
+function formatDate(d) {
+    const date = new Date(d);
+    return date.toLocaleDateString("en-GB");
 }
