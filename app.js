@@ -1,15 +1,16 @@
+// ================= CONFIG =================
 const API_URL = "https://script.google.com/macros/s/AKfycbyz75olpNFGF4oBiJ2bjhnxBiJts521x2qv7DC8PQHf2S4p1Ckro8uhbAgS_X6YwDdfpQ/exec";
 const MASTER_PASSWORD = "PandR@123";
 
-/* ================= LOGIN ================= */
-
+// ================= LOGIN =================
 function login() {
-    const pass = password.value;
+    const pass = document.getElementById("password").value;
+
     if (pass === MASTER_PASSWORD) {
         sessionStorage.setItem("loggedIn", "true");
-        loginPage.style.display = "none";
-        app.style.display = "flex";
-        init();
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("app").style.display = "flex";
+        initSystem();
     } else {
         alert("Wrong Password");
     }
@@ -22,13 +23,13 @@ function logout() {
 
 window.onload = function () {
     if (sessionStorage.getItem("loggedIn") === "true") {
-        loginPage.style.display = "none";
-        app.style.display = "flex";
-        init();
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("app").style.display = "flex";
+        initSystem();
     }
 };
 
-function init() {
+function initSystem() {
     showPage("dashboard");
     loadDashboard();
     loadVendor();
@@ -37,42 +38,39 @@ function init() {
     loadLedger();
 }
 
-/* ================= NAV ================= */
-
+// ================= PAGE NAVIGATION =================
 function showPage(id) {
     document.querySelectorAll(".page").forEach(p => p.style.display = "none");
     document.getElementById(id).style.display = "block";
 }
 
-/* ================= API ================= */
-
+// ================= API CALL =================
 async function callAPI(action, data = {}) {
-    const res = await fetch(API_URL, {
+    const response = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
         body: JSON.stringify({
-            action,
+            action: action,
             password: MASTER_PASSWORD,
             ...data
         })
     });
-    return await res.json();
+
+    const result = await response.json();
+    return result;
 }
 
-/* ================= DASHBOARD ================= */
-
+// ================= DASHBOARD =================
 async function loadDashboard() {
     const data = await callAPI("getDashboard");
-    totalExpense.innerText = data.totalExpense || 0;
-    totalSettlement.innerText = data.totalSettled || 0;
-    papaExpense.innerText = data.papaExpense || 0;
+    document.getElementById("totalExpense").innerText = data.totalExpense || 0;
+    document.getElementById("totalSettlement").innerText = data.totalSettled || 0;
+    document.getElementById("papaExpense").innerText = data.papaExpense || 0;
 }
 
-/* ================= MATERIAL ================= */
-
-matRate?.addEventListener("input", calcMaterialTotal);
-matQty?.addEventListener("input", calcMaterialTotal);
-
+// ================= MATERIAL =================
 function calcMaterialTotal() {
     const qty = parseFloat(matQty.value) || 0;
     const rate = parseFloat(matRate.value) || 0;
@@ -93,13 +91,11 @@ async function addMaterial() {
         remarks: matRemarks.value
     });
 
-    clearMaterialForm();
-    init();
-}
-
-function clearMaterialForm() {
-    document.querySelectorAll("#material input, #material select")
-        .forEach(i => i.value = "");
+    alert("Material Added Successfully");
+    document.querySelectorAll("#material input, #material select").forEach(e => e.value = "");
+    loadMaterial();
+    loadDashboard();
+    loadLedger();
 }
 
 async function loadMaterial() {
@@ -117,17 +113,16 @@ async function loadMaterial() {
             <td>${r.Qty}</td>
             <td>${r.Total}</td>
             <td>${r.Paid_By}</td>
-            <td>-</td>
-            <td>-</td>
+            <td><button onclick="editMaterial('${r.ID}')">Edit</button></td>
+            <td><button onclick="cancelEntry('Materials','${r.ID}')">Cancel</button></td>
         </tr>`;
     });
 
-    materialTable.querySelector("tbody").innerHTML = html;
-    materialGrandTotal.innerText = total;
+    document.querySelector("#materialTable tbody").innerHTML = html;
+    document.getElementById("materialGrandTotal").innerText = total;
 }
 
-/* ================= VENDOR ================= */
-
+// ================= VENDOR =================
 async function addVendor() {
     await callAPI("addVendor", {
         date: venDate.value,
@@ -139,8 +134,11 @@ async function addVendor() {
         remarks: venRemarks.value
     });
 
-    document.querySelectorAll("#vendor input").forEach(i => i.value = "");
-    init();
+    alert("Vendor Payment Added Successfully");
+    document.querySelectorAll("#vendor input").forEach(e => e.value = "");
+    loadVendor();
+    loadDashboard();
+    loadLedger();
 }
 
 async function loadVendor() {
@@ -157,17 +155,16 @@ async function loadVendor() {
             <td>${r.Vendor}</td>
             <td>${r.Amount}</td>
             <td>${r.Paid_By}</td>
-            <td>-</td>
-            <td>-</td>
+            <td><button onclick="editVendor('${r.ID}')">Edit</button></td>
+            <td><button onclick="cancelEntry('Vendor_Payments','${r.ID}')">Cancel</button></td>
         </tr>`;
     });
 
-    vendorTable.querySelector("tbody").innerHTML = html;
-    vendorGrandTotal.innerText = total;
+    document.querySelector("#vendorTable tbody").innerHTML = html;
+    document.getElementById("vendorGrandTotal").innerText = total;
 }
 
-/* ================= SETTLEMENT ================= */
-
+// ================= SETTLEMENT =================
 async function addSettlement() {
     await callAPI("addSettlement", {
         date: setDate.value,
@@ -178,8 +175,11 @@ async function addSettlement() {
         remarks: setRemarks.value
     });
 
-    document.querySelectorAll("#settlement input").forEach(i => i.value = "");
-    init();
+    alert("Settlement Added Successfully");
+    document.querySelectorAll("#settlement input").forEach(e => e.value = "");
+    loadSettlement();
+    loadDashboard();
+    loadLedger();
 }
 
 async function loadSettlement() {
@@ -196,34 +196,59 @@ async function loadSettlement() {
             <td>${r.Paid_To}</td>
             <td>${r.Amount}</td>
             <td>${r.Paid_By}</td>
-            <td>-</td>
-            <td>-</td>
+            <td><button onclick="cancelEntry('Internal_Settlement','${r.ID}')">Cancel</button></td>
         </tr>`;
     });
 
-    settlementTable.querySelector("tbody").innerHTML = html;
-    settlementGrandTotal.innerText = total;
+    document.querySelector("#settlementTable tbody").innerHTML = html;
+    document.getElementById("settlementGrandTotal").innerText = total;
 }
 
-/* ================= LEDGER ================= */
-
+// ================= LEDGER =================
 async function loadLedger() {
     const data = await callAPI("getLedger");
     let html = "";
 
     for (let person in data) {
-        html += `<tr>
-                    <td>${person}</td>
-                    <td>${data[person]}</td>
-                 </tr>`;
+        html += `<tr><td>${person}</td><td>${data[person]}</td></tr>`;
     }
 
-    ledgerTable.querySelector("tbody").innerHTML = html;
+    document.querySelector("#ledgerTable tbody").innerHTML = html;
 }
 
-/* ================= HELPERS ================= */
+// ================= CANCEL =================
+async function cancelEntry(sheetName, id) {
+    await callAPI("cancelEntry", {
+        sheet: sheetName,
+        id: id
+    });
 
+    alert("Entry Cancelled");
+    initSystem();
+}
+
+// ================= EDIT =================
+function editVendor(id) {
+    alert("Edit logic can be extended — entry ID: " + id);
+}
+
+function editMaterial(id) {
+    alert("Edit logic can be extended — entry ID: " + id);
+}
+
+// ================= REPORT =================
+async function loadReport() {
+    const data = await callAPI("getReport");
+    document.getElementById("reportContent").innerHTML =
+        "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+}
+
+function exportPDF() {
+    window.print();
+}
+
+// ================= HELPERS =================
 function formatDate(d) {
-    if (!d) return "";
-    return new Date(d).toLocaleDateString("en-GB");
+    const date = new Date(d);
+    return date.toLocaleDateString("en-GB");
 }
