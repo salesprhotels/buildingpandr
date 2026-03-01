@@ -1,19 +1,15 @@
-// ================= CONFIG =================
 const API_URL = "https://script.google.com/macros/s/AKfycbwo78mV92MKxcGMSB52NziL7bmn0AsEplVo2rhj92O3UGk7EKl9B8OlJt9ZqbmXEE7JiQ/exec";
 const MASTER_PASSWORD = "PandR@123";
 
-// ================= LOGIN =================
+/* ================= LOGIN ================= */
+
 function login() {
-    const pass = document.getElementById("password").value;
+    const pass = password.value;
     if (pass === MASTER_PASSWORD) {
         sessionStorage.setItem("loggedIn", "true");
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("app").style.display = "flex";
-        loadDashboard();
-        loadVendor();
-        loadMaterial();
-        loadSettlement();
-        loadLedger();
+        loginPage.style.display = "none";
+        app.style.display = "flex";
+        init();
     } else {
         alert("Wrong Password");
     }
@@ -26,28 +22,36 @@ function logout() {
 
 window.onload = function () {
     if (sessionStorage.getItem("loggedIn") === "true") {
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("app").style.display = "flex";
-        loadDashboard();
-        loadVendor();
-        loadMaterial();
-        loadSettlement();
-        loadLedger();
+        loginPage.style.display = "none";
+        app.style.display = "flex";
+        init();
     }
 };
 
-// ================= PAGE NAVIGATION =================
+function init() {
+    showPage("dashboard");
+    loadDashboard();
+    loadVendor();
+    loadMaterial();
+    loadSettlement();
+    loadLedger();
+}
+
+/* ================= NAV ================= */
+
 function showPage(id) {
     document.querySelectorAll(".page").forEach(p => p.style.display = "none");
     document.getElementById(id).style.display = "block";
 }
 
-// ================= API CALL =================
+/* ================= API ================= */
+
 async function callAPI(action, data = {}) {
     const res = await fetch(API_URL, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            action: action,
+            action,
             password: MASTER_PASSWORD,
             ...data
         })
@@ -55,22 +59,24 @@ async function callAPI(action, data = {}) {
     return await res.json();
 }
 
-// ================= DASHBOARD =================
+/* ================= DASHBOARD ================= */
+
 async function loadDashboard() {
     const data = await callAPI("getDashboard");
-    document.getElementById("totalExpense").innerText = data.totalExpense || 0;
-    document.getElementById("totalSettlement").innerText = data.totalSettled || 0;
-    document.getElementById("papaExpense").innerText = data.papaExpense || 0;
+    totalExpense.innerText = data.totalExpense || 0;
+    totalSettlement.innerText = data.totalSettled || 0;
+    papaExpense.innerText = data.papaExpense || 0;
 }
 
-// ================= MATERIAL =================
-document.getElementById("matRate")?.addEventListener("input", calcMaterialTotal);
-document.getElementById("matQty")?.addEventListener("input", calcMaterialTotal);
+/* ================= MATERIAL ================= */
+
+matRate?.addEventListener("input", calcMaterialTotal);
+matQty?.addEventListener("input", calcMaterialTotal);
 
 function calcMaterialTotal() {
-    const qty = parseFloat(document.getElementById("matQty").value) || 0;
-    const rate = parseFloat(document.getElementById("matRate").value) || 0;
-    document.getElementById("matTotal").value = qty * rate;
+    const qty = parseFloat(matQty.value) || 0;
+    const rate = parseFloat(matRate.value) || 0;
+    matTotal.value = qty * rate;
 }
 
 async function addMaterial() {
@@ -87,14 +93,13 @@ async function addMaterial() {
         remarks: matRemarks.value
     });
 
-    alert("Material Added Successfully");
     clearMaterialForm();
-    loadMaterial();
-    loadDashboard();
+    init();
 }
 
 function clearMaterialForm() {
-    document.querySelectorAll("#material input, #material select").forEach(i => i.value = "");
+    document.querySelectorAll("#material input, #material select")
+        .forEach(i => i.value = "");
 }
 
 async function loadMaterial() {
@@ -102,26 +107,27 @@ async function loadMaterial() {
     let html = "";
     let total = 0;
 
-    data.material.reverse().forEach(r => {
-        total += r.total;
+    data.material.forEach(r => {
+        total += Number(r.Total);
+
         html += `
-            <tr>
-                <td>${formatDate(r.date)}</td>
-                <td>${r.item}</td>
-                <td>${r.qty}</td>
-                <td>${r.total}</td>
-                <td>${r.paidBy}</td>
-                <td><button onclick="editMaterial('${r.id}')">Edit</button></td>
-                <td><button onclick="cancelMaterial('${r.id}')">Cancel</button></td>
-            </tr>
-        `;
+        <tr>
+            <td>${formatDate(r.Date)}</td>
+            <td>${r.Item}</td>
+            <td>${r.Qty}</td>
+            <td>${r.Total}</td>
+            <td>${r.Paid_By}</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>`;
     });
 
-    document.querySelector("#materialTable tbody").innerHTML = html;
-    document.getElementById("materialGrandTotal").innerText = total;
+    materialTable.querySelector("tbody").innerHTML = html;
+    materialGrandTotal.innerText = total;
 }
 
-// ================= VENDOR =================
+/* ================= VENDOR ================= */
+
 async function addVendor() {
     await callAPI("addVendor", {
         date: venDate.value,
@@ -133,10 +139,8 @@ async function addVendor() {
         remarks: venRemarks.value
     });
 
-    alert("Vendor Payment Added");
     document.querySelectorAll("#vendor input").forEach(i => i.value = "");
-    loadVendor();
-    loadDashboard();
+    init();
 }
 
 async function loadVendor() {
@@ -144,25 +148,26 @@ async function loadVendor() {
     let html = "";
     let total = 0;
 
-    data.vendor.reverse().forEach(r => {
-        total += r.amount;
+    data.vendor.forEach(r => {
+        total += Number(r.Amount);
+
         html += `
-            <tr>
-                <td>${formatDate(r.date)}</td>
-                <td>${r.vendor}</td>
-                <td>${r.amount}</td>
-                <td>${r.paidBy}</td>
-                <td><button onclick="editVendor('${r.id}')">Edit</button></td>
-                <td><button onclick="cancelVendor('${r.id}')">Cancel</button></td>
-            </tr>
-        `;
+        <tr>
+            <td>${formatDate(r.Date)}</td>
+            <td>${r.Vendor}</td>
+            <td>${r.Amount}</td>
+            <td>${r.Paid_By}</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>`;
     });
 
-    document.querySelector("#vendorTable tbody").innerHTML = html;
-    document.getElementById("vendorGrandTotal").innerText = total;
+    vendorTable.querySelector("tbody").innerHTML = html;
+    vendorGrandTotal.innerText = total;
 }
 
-// ================= SETTLEMENT =================
+/* ================= SETTLEMENT ================= */
+
 async function addSettlement() {
     await callAPI("addSettlement", {
         date: setDate.value,
@@ -173,10 +178,8 @@ async function addSettlement() {
         remarks: setRemarks.value
     });
 
-    alert("Settlement Added");
     document.querySelectorAll("#settlement input").forEach(i => i.value = "");
-    loadSettlement();
-    loadDashboard();
+    init();
 }
 
 async function loadSettlement() {
@@ -184,52 +187,43 @@ async function loadSettlement() {
     let html = "";
     let total = 0;
 
-    data.settlement.reverse().forEach(r => {
-        total += r.amount;
+    data.settlement.forEach(r => {
+        total += Number(r.Amount);
+
         html += `
-            <tr>
-                <td>${formatDate(r.date)}</td>
-                <td>${r.paidTo}</td>
-                <td>${r.amount}</td>
-                <td>${r.paidBy}</td>
-                <td><button>Edit</button></td>
-                <td><button>Cancel</button></td>
-            </tr>
-        `;
+        <tr>
+            <td>${formatDate(r.Date)}</td>
+            <td>${r.Paid_To}</td>
+            <td>${r.Amount}</td>
+            <td>${r.Paid_By}</td>
+            <td>-</td>
+            <td>-</td>
+        </tr>`;
     });
 
-    document.querySelector("#settlementTable tbody").innerHTML = html;
-    document.getElementById("settlementGrandTotal").innerText = total;
+    settlementTable.querySelector("tbody").innerHTML = html;
+    settlementGrandTotal.innerText = total;
 }
 
-// ================= LEDGER =================
+/* ================= LEDGER ================= */
+
 async function loadLedger() {
     const data = await callAPI("getLedger");
     let html = "";
+
     for (let person in data) {
-        html += `<tr><td>${person}</td><td>${data[person]}</td></tr>`;
+        html += `<tr>
+                    <td>${person}</td>
+                    <td>${data[person]}</td>
+                 </tr>`;
     }
-    document.querySelector("#ledgerTable tbody").innerHTML = html;
+
+    ledgerTable.querySelector("tbody").innerHTML = html;
 }
 
-// ================= REPORT =================
-async function loadReport() {
-    const data = await callAPI("getReport");
-    document.getElementById("reportContent").innerHTML =
-        "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
-}
+/* ================= HELPERS ================= */
 
-// ================= EXPORT =================
-function exportExcel() {
-    alert("Excel Export Triggered (Connect Sheet Directly)");
-}
-
-function exportPDF() {
-    window.print();
-}
-
-// ================= HELPERS =================
 function formatDate(d) {
-    const date = new Date(d);
-    return date.toLocaleDateString("en-GB");
+    if (!d) return "";
+    return new Date(d).toLocaleDateString("en-GB");
 }
