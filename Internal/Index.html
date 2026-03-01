@@ -1,1 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PandR Construction ERP</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
 
+<!-- ================= LOGIN ================= -->
+
+<div id="loginPage" class="login-container">
+    <div class="login-box">
+        <h2>PandR ERP Login</h2>
+        <input type="password" id="password" placeholder="Enter Password">
+        <button onclick="login()">Login</button>
+        <p id="loginError"></p>
+    </div>
+</div>
+
+<!-- ================= MAIN APP ================= -->
+
+<div id="app" class="hidden">
+
+    <div class="sidebar">
+        <h2>PandR ERP</h2>
+        <button onclick="showSection('dashboard')">Dashboard</button>
+        <button onclick="showSection('material')">Material</button>
+        <button onclick="showSection('vendor')">Vendor</button>
+        <button onclick="showSection('settlement')">Settlement</button>
+        <button onclick="showSection('report')">Report</button>
+        <button onclick="showSection('ledger')">Ledger</button>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="content">
+
+        <!-- ================= DASHBOARD ================= -->
+
+        <div id="dashboard" class="section">
+            <h2>Dashboard</h2>
+            <div class="card-grid">
+                <div class="card">Total Expense<br><span id="totalExpense">0</span></div>
+                <div class="card">Total Settlement<br><span id="totalSettlement">0</span></div>
+                <div class="card">Papa Total Expense<br><span id="papaExpense">0</span></div>
+            </div>
+        </div>
+
+        <!-- ================= MATERIAL ================= -->
+
+        <div id="material" class="section hidden">
+            <h2>Add Construction Material</h2>
+
+            <div class="form-grid">
+
+                <input type="date" id="matDate">
+
+                <select id="matCategory">
+                    <option>Structural</option>
+                    <option>Electrical</option>
+                    <option>Plumbing</option>
+                    <option>Finishing</option>
+                    <option>Furniture</option>
+                </select>
+
+                <select id="matItem">
+                    <option>Cement (Bag)</option>
+                    <option>Sand (Dumper)</option>
+                    <option>Gravel (Dumper)</option>
+                    <option>Bricks (1000 pcs)</option>
+                    <option>TMT Bar 8mm</option>
+                    <option>TMT Bar 10mm</option>
+                    <option>TMT Bar 12mm</option>
+                    <option>TMT Bar 16mm</option>
+                    <option>Binding Wire (Kg)</option>
+                    <option>PVC Pipe</option>
+                    <option>Electrical Wire (Coil)</option>
+                    <option>Paint (Bucket)</option>
+                    <option>Tiles</option>
+                    <option>Doors</option>
+                    <option>Windows</option>
+                </select>
+
+                <input type="number" id="matQty" placeholder="Quantity">
+                <input type="text" id="matUnit" placeholder="Unit (Bag/Dumper/Kg etc)">
+                <input type="number" id="matRate" placeholder="Rate">
+                <input type="number" id="matTotal" placeholder="Total" readonly>
+
+                <input type="text" id="matVendor" placeholder="Vendor">
+                <input type="text" id="matPaidBy" placeholder="Paid By">
+                
+                <select id="matMode">
+                    <option>Cash</option>
+                    <option>UPI</option>
+                    <option>Bank Transfer</option>
+                    <option>Cheque</option>
+                </select>
+
+                <input type="text" id="matRemarks" placeholder="Remarks">
+
+                <button onclick="addMaterial()">Submit</button>
+            </div>
+
+            <h3>Material Records</h3>
+            <table id="materialTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                        <th>Paid By</th>
+                        <th>Edit</th>
+                        <th>Cancel</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ================= VENDOR ================= -->
+
+        <div id="vendor" class="section hidden">
+            <h2>Add Vendor Payment</h2>
+
+            <div class="form-grid">
+                <input type="date" id="venDate">
+                <input type="text" id="venVendor" placeholder="Vendor">
+                <input type="text" id="venCategory" placeholder="Category">
+                <input type="text" id="venPaidBy" placeholder="Paid By">
+                <input type="number" id="venAmount" placeholder="Amount">
+
+                <select id="venMode">
+                    <option>Cash</option>
+                    <option>UPI</option>
+                    <option>Bank Transfer</option>
+                    <option>Cheque</option>
+                </select>
+
+                <input type="text" id="venRemarks" placeholder="Remarks">
+
+                <button onclick="addVendor()">Submit</button>
+            </div>
+
+            <h3>Vendor Records</h3>
+            <table id="vendorTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Vendor</th>
+                        <th>Amount</th>
+                        <th>Paid By</th>
+                        <th>Edit</th>
+                        <th>Cancel</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ================= SETTLEMENT ================= -->
+
+        <div id="settlement" class="section hidden">
+            <h2>Add Settlement</h2>
+
+            <div class="form-grid">
+                <input type="date" id="setDate">
+                <input type="text" id="setPaidTo" placeholder="Paid To">
+                <input type="text" id="setPaidBy" placeholder="Paid By">
+                <input type="number" id="setAmount" placeholder="Amount">
+
+                <select id="setMode">
+                    <option>Cash</option>
+                    <option>UPI</option>
+                    <option>Bank Transfer</option>
+                    <option>Cheque</option>
+                </select>
+
+                <input type="text" id="setRemarks" placeholder="Remarks">
+
+                <button onclick="addSettlement()">Submit</button>
+            </div>
+
+            <h3>Settlement Records</h3>
+            <table id="settlementTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Paid To</th>
+                        <th>Amount</th>
+                        <th>Paid By</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ================= REPORT ================= -->
+
+        <div id="report" class="section hidden">
+            <h2>Date Wise Report</h2>
+
+            <input type="date" id="fromDate">
+            <input type="date" id="toDate">
+            <button onclick="filterReport()">Filter</button>
+            <button onclick="exportExcel()">Export Excel</button>
+            <button onclick="exportPDF()">Export PDF</button>
+
+            <table id="reportTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Paid By</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- ================= LEDGER ================= -->
+
+        <div id="ledger" class="section hidden">
+            <h2>Ledger</h2>
+
+            <table id="ledgerTable">
+                <thead>
+                    <tr>
+                        <th>Person</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
