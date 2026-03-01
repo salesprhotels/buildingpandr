@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyz75olpNFGF4oBiJ2bjhnxBiJts521x2qv7DC8PQHf2S4p1Ckro8uhbAgS_X6YwDdfpQ/exec";
+const API_URL = "PASTE_YOUR_DEPLOY_URL";
 const MASTER_PASSWORD = "PandR@123";
 
 function login(){
@@ -147,74 +147,107 @@ async function cancel(sheet,id){
 await api("cancelEntry",{sheet,id});
 loadAll();
 }
-// ================= REPORT =================
-async function loadReport(){
+// ================= NEW REPORT =================
+async function generateReport(){
 
-const from = new Date(reportFrom.value);
-const to = new Date(reportTo.value);
+    const type = document.getElementById("reportType").value;
+    const from = document.getElementById("reportFrom").value;
+    const to = document.getElementById("reportTo").value;
 
-const data = await api("getReport");
+    if(!type || !from || !to){
+        alert("Please select type and date range");
+        return;
+    }
 
-let vHTML="", mHTML="", sHTML="";
-let vTotal=0, mTotal=0, sTotal=0;
+    const data = await callAPI("getReport");
 
-// VENDOR
-data.vendor.forEach(r=>{
-const d = new Date(r.Date);
-if(reportFrom.value && d < from) return;
-if(reportTo.value && d > to) return;
+    let records = data[type];
 
-vTotal += Number(r.Amount);
-vHTML += `
-<tr>
-<td>${d.toLocaleDateString()}</td>
-<td>${r.Vendor}</td>
-<td>${r.Amount}</td>
-<td>${r.Paid_By}</td>
-</tr>`;
-});
+    // Date filter
+    records = records.filter(r=>{
+        const d = new Date(r.Date);
+        return d >= new Date(from) && d <= new Date(to);
+    });
 
-reportVendor.querySelector("tbody").innerHTML = vHTML;
-reportVendorTotal.innerText = vTotal;
+    let thead="";
+    let tbody="";
+    let total=0;
 
+    if(type==="material"){
 
-// MATERIAL
-data.material.forEach(r=>{
-const d = new Date(r.Date);
-if(reportFrom.value && d < from) return;
-if(reportTo.value && d > to) return;
+        thead = `
+        <tr>
+        <th>Date</th>
+        <th>Item</th>
+        <th>Total</th>
+        <th>Paid By</th>
+        </tr>`;
 
-mTotal += Number(r.Total);
-mHTML += `
-<tr>
-<td>${d.toLocaleDateString()}</td>
-<td>${r.Item}</td>
-<td>${r.Total}</td>
-<td>${r.Paid_By}</td>
-</tr>`;
-});
+        records.forEach(r=>{
+            total += Number(r.Total);
+            tbody+=`
+            <tr>
+            <td>${formatDate(r.Date)}</td>
+            <td>${r.Item}</td>
+            <td>${r.Total}</td>
+            <td>${r.Paid_By}</td>
+            </tr>`;
+        });
 
-reportMaterial.querySelector("tbody").innerHTML = mHTML;
-reportMaterialTotal.innerText = mTotal;
+    }
 
+    if(type==="vendor"){
 
-// SETTLEMENT
-data.settlement.forEach(r=>{
-const d = new Date(r.Date);
-if(reportFrom.value && d < from) return;
-if(reportTo.value && d > to) return;
+        thead = `
+        <tr>
+        <th>Date</th>
+        <th>Vendor</th>
+        <th>Amount</th>
+        <th>Paid By</th>
+        </tr>`;
 
-sTotal += Number(r.Amount);
-sHTML += `
-<tr>
-<td>${d.toLocaleDateString()}</td>
-<td>${r.Paid_To}</td>
-<td>${r.Amount}</td>
-<td>${r.Paid_By}</td>
-</tr>`;
-});
+        records.forEach(r=>{
+            total += Number(r.Amount);
+            tbody+=`
+            <tr>
+            <td>${formatDate(r.Date)}</td>
+            <td>${r.Vendor}</td>
+            <td>${r.Amount}</td>
+            <td>${r.Paid_By}</td>
+            </tr>`;
+        });
 
-reportSettlement.querySelector("tbody").innerHTML = sHTML;
-reportSettlementTotal.innerText = sTotal;
+    }
 
+    if(type==="settlement"){
+
+        thead = `
+        <tr>
+        <th>Date</th>
+        <th>Paid To</th>
+        <th>Amount</th>
+        <th>Paid By</th>
+        </tr>`;
+
+        records.forEach(r=>{
+            total += Number(r.Amount);
+            tbody+=`
+            <tr>
+            <td>${formatDate(r.Date)}</td>
+            <td>${r.Paid_To}</td>
+            <td>${r.Amount}</td>
+            <td>${r.Paid_By}</td>
+            </tr>`;
+        });
+
+    }
+
+    document.getElementById("reportTitle").innerText =
+        type.toUpperCase() + " REPORT";
+
+    document.querySelector("#reportTable thead").innerHTML = thead;
+    document.querySelector("#reportTable tbody").innerHTML = tbody;
+    document.querySelector("#reportTable tfoot").innerHTML =
+        `<tr><td colspan="2">Grand Total</td>
+         <td>${total}</td><td></td></tr>`;
 }
