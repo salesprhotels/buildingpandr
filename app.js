@@ -89,8 +89,13 @@ async function addMaterial() {
     });
 
     alert("Material Added Successfully");
+    clearMaterialForm();
     loadMaterial();
     loadDashboard();
+}
+
+function clearMaterialForm(){
+    document.querySelectorAll("#material input, #material select").forEach(i=>i.value="");
 }
 
 async function loadMaterial() {
@@ -106,12 +111,27 @@ async function loadMaterial() {
             <td>${r.Item}</td>
             <td>${r.Total}</td>
             <td>${r.Paid_By}</td>
+            <td><button onclick="editMaterial('${r.ID}')">Edit</button></td>
             <td><button onclick="cancelEntry('Materials','${r.ID}')">Cancel</button></td>
         </tr>`;
     });
 
     materialTable.querySelector("tbody").innerHTML = html;
     materialGrandTotal.innerText = total;
+}
+
+async function editMaterial(id){
+    const newTotal = prompt("Enter new Total:");
+    if(!newTotal) return;
+
+    await callAPI("editEntry",{
+        sheet:"Materials",
+        id:id,
+        fields:{ Total:Number(newTotal) }
+    });
+
+    loadMaterial();
+    loadDashboard();
 }
 
 // ================= VENDOR =================
@@ -127,6 +147,7 @@ async function addVendor() {
     });
 
     alert("Vendor Payment Added");
+    document.querySelectorAll("#vendor input").forEach(i=>i.value="");
     loadVendor();
     loadDashboard();
 }
@@ -144,12 +165,27 @@ async function loadVendor() {
             <td>${r.Vendor}</td>
             <td>${r.Amount}</td>
             <td>${r.Paid_By}</td>
+            <td><button onclick="editVendor('${r.ID}')">Edit</button></td>
             <td><button onclick="cancelEntry('Vendor_Payments','${r.ID}')">Cancel</button></td>
         </tr>`;
     });
 
     vendorTable.querySelector("tbody").innerHTML = html;
     vendorGrandTotal.innerText = total;
+}
+
+async function editVendor(id){
+    const newAmount = prompt("Enter new Amount:");
+    if(!newAmount) return;
+
+    await callAPI("editEntry",{
+        sheet:"Vendor_Payments",
+        id:id,
+        fields:{ Amount:Number(newAmount) }
+    });
+
+    loadVendor();
+    loadDashboard();
 }
 
 // ================= SETTLEMENT =================
@@ -164,6 +200,7 @@ async function addSettlement() {
     });
 
     alert("Settlement Added");
+    document.querySelectorAll("#settlement input").forEach(i=>i.value="");
     loadSettlement();
     loadDashboard();
 }
@@ -181,6 +218,7 @@ async function loadSettlement() {
             <td>${r.Paid_To}</td>
             <td>${r.Amount}</td>
             <td>${r.Paid_By}</td>
+            <td></td>
             <td><button onclick="cancelEntry('Internal_Settlement','${r.ID}')">Cancel</button></td>
         </tr>`;
     });
@@ -209,15 +247,14 @@ async function loadLedger() {
     ledgerTable.querySelector("tbody").innerHTML = html;
 }
 
-// ================= REPORT (FINAL STRUCTURE) =================
+// ================= REPORT =================
 async function generateReport(){
-
     const type = reportType.value;
     const from = reportFrom.value;
     const to = reportTo.value;
 
     if(!type || !from || !to){
-        alert("Select report type and date range");
+        alert("Select type and date range");
         return;
     }
 
@@ -229,15 +266,15 @@ async function generateReport(){
         return d >= new Date(from) && d <= new Date(to);
     });
 
-    let thead="";
-    let tbody="";
+    let head="";
+    let body="";
     let total=0;
 
     if(type==="material"){
-        thead=`<tr><th>Date</th><th>Item</th><th>Total</th><th>Paid By</th></tr>`;
+        head="<tr><th>Date</th><th>Item</th><th>Total</th><th>Paid By</th></tr>";
         records.forEach(r=>{
             total+=Number(r.Total);
-            tbody+=`<tr>
+            body+=`<tr>
             <td>${formatDate(r.Date)}</td>
             <td>${r.Item}</td>
             <td>${r.Total}</td>
@@ -247,10 +284,10 @@ async function generateReport(){
     }
 
     if(type==="vendor"){
-        thead=`<tr><th>Date</th><th>Vendor</th><th>Amount</th><th>Paid By</th></tr>`;
+        head="<tr><th>Date</th><th>Vendor</th><th>Amount</th><th>Paid By</th></tr>";
         records.forEach(r=>{
             total+=Number(r.Amount);
-            tbody+=`<tr>
+            body+=`<tr>
             <td>${formatDate(r.Date)}</td>
             <td>${r.Vendor}</td>
             <td>${r.Amount}</td>
@@ -260,10 +297,10 @@ async function generateReport(){
     }
 
     if(type==="settlement"){
-        thead=`<tr><th>Date</th><th>Paid To</th><th>Amount</th><th>Paid By</th></tr>`;
+        head="<tr><th>Date</th><th>Paid To</th><th>Amount</th><th>Paid By</th></tr>";
         records.forEach(r=>{
             total+=Number(r.Amount);
-            tbody+=`<tr>
+            body+=`<tr>
             <td>${formatDate(r.Date)}</td>
             <td>${r.Paid_To}</td>
             <td>${r.Amount}</td>
@@ -272,13 +309,13 @@ async function generateReport(){
         });
     }
 
-    reportTable.querySelector("thead").innerHTML = thead;
-    reportTable.querySelector("tbody").innerHTML = tbody;
-    reportTable.querySelector("tfoot").innerHTML =
+    reportTable.querySelector("thead").innerHTML=head;
+    reportTable.querySelector("tbody").innerHTML=body;
+    reportTable.querySelector("tfoot").innerHTML=
         `<tr><td colspan="2">Grand Total</td><td>${total}</td><td></td></tr>`;
 }
 
 // ================= HELPER =================
-function formatDate(d) {
+function formatDate(d){
     return new Date(d).toLocaleDateString("en-GB");
 }
