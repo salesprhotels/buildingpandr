@@ -7,39 +7,94 @@
 <link rel="stylesheet" href="style.css">
 <script defer src="app.js"></script>
 </head>
+
 <body>
 
+<!-- ================= LOGIN ================= -->
 <div id="loginPage" class="center-box">
     <h2>PandR ERP Login</h2>
     <input type="password" id="password" placeholder="Enter Password">
     <button onclick="login()">Login</button>
 </div>
 
+<!-- ================= MAIN APP ================= -->
 <div id="app" style="display:none;">
+
+<!-- SIDEBAR -->
 <div class="sidebar">
     <h2>PandR ERP</h2>
     <button onclick="showPage('dashboard')">Dashboard</button>
-    <button onclick="showPage('vendor')">Vendor</button>
     <button onclick="showPage('material')">Material</button>
+    <button onclick="showPage('vendor')">Vendor</button>
     <button onclick="showPage('settlement')">Settlement</button>
     <button onclick="showPage('report')">Report</button>
     <button onclick="showPage('ledger')">Ledger</button>
     <button onclick="logout()">Logout</button>
 </div>
 
+<!-- CONTENT -->
 <div class="content">
 
+<!-- ================= DASHBOARD ================= -->
 <div id="dashboard" class="page">
-<h2>Dashboard</h2>
-<div class="card-grid">
-<div class="card">Total Expense<br><span id="totalExpense">0</span></div>
-<div class="card">Total Settlement<br><span id="totalSettlement">0</span></div>
-<div class="card">Papa Final Expense<br><span id="papaExpense">0</span></div>
-</div>
+    <h2>Dashboard</h2>
+    <div class="card-grid">
+        <div class="card">Total Expense <span id="totalExpense">0</span></div>
+        <div class="card">Total Settlement <span id="totalSettlement">0</span></div>
+        <div class="card">Papa Final Expense <span id="papaExpense">0</span></div>
+    </div>
 </div>
 
+<!-- ================= MATERIAL ================= -->
+<div id="material" class="page">
+<h2>Material Entry</h2>
+
+<div class="form-grid">
+<input type="date" id="matDate">
+<input type="text" id="matCategory" placeholder="Category">
+<input type="text" id="matItem" placeholder="Item">
+<input type="number" id="matQty" placeholder="Quantity">
+<input type="text" id="matUnit" placeholder="Unit">
+<input type="number" id="matRate" placeholder="Rate">
+<input type="number" id="matTotal" placeholder="Total" readonly>
+<input type="text" id="matVendor" placeholder="Vendor">
+<input type="text" id="matPaidBy" placeholder="Paid By">
+<select id="matMode">
+<option>Cash</option>
+<option>UPI</option>
+<option>Bank</option>
+<option>Cheque</option>
+</select>
+<input type="text" id="matRemarks" placeholder="Remarks">
+<button onclick="addMaterial()">Submit</button>
+</div>
+
+<table id="materialTable">
+<thead>
+<tr>
+<th>Date</th>
+<th>Item</th>
+<th>Total</th>
+<th>Paid By</th>
+<th>Edit</th>
+<th>Cancel</th>
+</tr>
+</thead>
+<tbody></tbody>
+<tfoot>
+<tr>
+<td colspan="2">Grand Total</td>
+<td id="materialGrandTotal">0</td>
+<td colspan="3"></td>
+</tr>
+</tfoot>
+</table>
+</div>
+
+<!-- ================= VENDOR ================= -->
 <div id="vendor" class="page">
 <h2>Vendor Payment</h2>
+
 <div class="form-grid">
 <input type="date" id="venDate">
 <input type="text" id="venVendor" placeholder="Vendor">
@@ -63,6 +118,7 @@
 <th>Vendor</th>
 <th>Amount</th>
 <th>Paid By</th>
+<th>Edit</th>
 <th>Cancel</th>
 </tr>
 </thead>
@@ -71,57 +127,16 @@
 <tr>
 <td colspan="2">Grand Total</td>
 <td id="vendorGrandTotal">0</td>
-<td colspan="2"></td>
+<td colspan="3"></td>
 </tr>
 </tfoot>
 </table>
 </div>
 
-<div id="material" class="page">
-<h2>Material Entry</h2>
-<div class="form-grid">
-<input type="date" id="matDate">
-<input type="text" id="matCategory" placeholder="Category">
-<input type="text" id="matItem" placeholder="Item">
-<input type="number" id="matQty" placeholder="Qty">
-<input type="text" id="matUnit" placeholder="Unit">
-<input type="number" id="matRate" placeholder="Rate">
-<input type="number" id="matTotal" placeholder="Total" readonly>
-<input type="text" id="matVendor" placeholder="Vendor">
-<input type="text" id="matPaidBy" placeholder="Paid By">
-<select id="matMode">
-<option>Cash</option>
-<option>UPI</option>
-<option>Bank</option>
-<option>Cheque</option>
-</select>
-<input type="text" id="matRemarks" placeholder="Remarks">
-<button onclick="addMaterial()">Submit</button>
-</div>
-
-<table id="materialTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Item</th>
-<th>Total</th>
-<th>Paid By</th>
-<th>Cancel</th>
-</tr>
-</thead>
-<tbody></tbody>
-<tfoot>
-<tr>
-<td colspan="2">Grand Total</td>
-<td id="materialGrandTotal">0</td>
-<td colspan="2"></td>
-</tr>
-</tfoot>
-</table>
-</div>
-
+<!-- ================= SETTLEMENT ================= -->
 <div id="settlement" class="page">
 <h2>Settlement</h2>
+
 <div class="form-grid">
 <input type="date" id="setDate">
 <input type="text" id="setPaidTo" placeholder="Paid To">
@@ -144,6 +159,7 @@
 <th>Paid To</th>
 <th>Amount</th>
 <th>Paid By</th>
+<th>Edit</th>
 <th>Cancel</th>
 </tr>
 </thead>
@@ -152,7 +168,7 @@
 <tr>
 <td colspan="2">Grand Total</td>
 <td id="settlementGrandTotal">0</td>
-<td colspan="2"></td>
+<td colspan="3"></td>
 </tr>
 </tfoot>
 </table>
@@ -160,11 +176,11 @@
 
 <!-- ================= REPORT ================= -->
 <div id="report" class="page">
-<h2>Report</h2>
+<h2>Report Section</h2>
 
 <div class="form-grid">
 <select id="reportType">
-<option value="">Select Report Type</option>
+<option value="">Select Type</option>
 <option value="material">Material</option>
 <option value="vendor">Vendor</option>
 <option value="settlement">Settlement</option>
@@ -172,11 +188,9 @@
 
 <input type="date" id="reportFrom">
 <input type="date" id="reportTo">
-
-<button onclick="generateReport()">Submit</button>
+<button onclick="generateReport()">Generate</button>
+<button onclick="window.print()">Export PDF</button>
 </div>
-
-<h3 id="reportTitle"></h3>
 
 <table id="reportTable">
 <thead></thead>
@@ -185,20 +199,23 @@
 </table>
 
 </div>
-    
+
+<!-- ================= LEDGER ================= -->
 <div id="ledger" class="page">
 <h2>Ledger</h2>
 <table id="ledgerTable">
 <thead>
-<tr><th>Person</th><th>Balance</th></tr>
+<tr>
+<th>Person</th>
+<th>Balance</th>
+</tr>
 </thead>
 <tbody></tbody>
 </table>
-<button onclick="window.print()">Export PDF</button>
 </div>
 
-</div>
-</div>
+</div> <!-- content -->
+</div> <!-- app -->
 
 </body>
 </html>
